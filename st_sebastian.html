@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js canvas - geometry - platter</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" type="text/css" href="css/cards.css">
+		<style>
+
+			#info {
+				text-align: center;
+				padding: 10px;
+				z-index: 10;
+				width: 100%;
+				position: absolute;
+			}
+
+			a {
+				text-decoration: underline;
+				cursor: pointer;
+			}
+
+			#stats { position: absolute; top:0; left: 0 }
+			#stats #fps { background: transparent !important }
+			#stats #fps #fpsText { color: #aaa !important }
+			#stats #fps #fpsGraph { display: none }
+		</style>
+	</head>
+	<body>
+
+		<script src="js/three.min.js"></script>
+		<script src="js/Gyroscope.js"></script>
+		<script src="js/p2.min.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/renderers/Projector.js"></script>
+		<script src="js/renderers/CanvasRenderer.js"></script>
+		<script src="js/BlendCharacter.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		
+
+		<div class="outer">
+			<div class="middle">
+				<!--<div class="card">-->
+					<div class="outerRel">
+						<div class="middle">
+						<div id="canvasContainer">
+							<div id="canvas" class="card">
+							</div>
+						</div>
+						<!--p class="card"> ST. AGATHA, you suffered sexual assault and indignity because of your faith. Help heal all those who are survivors of sexual assault and protect those women who are in danger. <i>Amen</i>.</p>-->
+						</div>
+					</div>
+				<!--</div>-->
+			</div>
+		</div>
+		<script>
+		
+		// scene size
+		WIDTH = window.innerHeight*.49442;
+		HEIGHT = window.innerHeight*.8;
+		
+		var world, circle1, circle2;
+		
+		//BONE ANIMATION VARIABLES
+		
+		boneRot1 = new THREE.Euler();
+		boneRot2 = new THREE.Euler();
+		
+		rotStiff = 5;
+		rotDamp = 100;
+		bodyDamp = .5;
+		
+		//ARROW SHOOTING VARIABLES
+		
+		var raycaster = new THREE.Raycaster();
+		var raycasterVector = new THREE.Vector3(0,0,-1);
+		var originVector = new THREE.Vector3(0,0,0);
+		var directionVector = new THREE.Vector3(0,0,0);
+		
+		arrowY = 0;
+		arrowX = 0;
+		arrowZ = 10000;
+				
+		var arrowSteps = 16;
+		var arrowCoolDown = arrowSteps;
+		//var arrowDist = 20;
+		var arrowDist = 30;
+		var arrowLive = false;
+		var rayDist = 2.3;
+		
+		var arrowOriginX = 0;
+		var arrowOriginY = 0;
+		var arrowOriginZ = 0;
+		
+		var fov = (10/360)*(2*Math.PI);
+		
+		var hitZoneX = -1;
+		var hitZoneY = 0;
+		var hitZoneZ = 2;
+		var hitZoneH = 3;
+		var hitZoneR = 2;
+		
+		var hitArray = [];
+		var hitVerts = [];
+		var hitBone;
+		var hitPos = new THREE.Vector3(0,0,0);
+		var hitPower = 350;
+		
+		var translation = new THREE.Vector3(0,0,0);
+		var bone2parent = new THREE.Gyroscope();
+		
+		var container, stats;
+
+		var camera, scene, renderer;
+		
+		var mouseX = 0;
+		var mouseXOnMouseDown = 0;
+		
+		heightScale = 1;
+
+		var windowHalfX = WIDTH / 2;
+		var windowHalfY = HEIGHT / 2;
+		n=0;
+		
+		var oldTime=Date.now();
+		var frameMS = 1;
+				
+		var xAxis = new THREE.Vector3(1,0,0);
+		var yAxis = new THREE.Vector3(0,1,0);
+		
+		var rotWorldMatrix;
+		
+		makePhysics();
+		init();
+		animate();
+
+		// Rotate an object around an arbitrary axis in world space       
+		function rotateAroundWorldAxis(object, axis, radians) {
+			rotWorldMatrix = new THREE.Matrix4();
+			rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+
+			// old code for Three.JS pre r54:
+			//  rotWorldMatrix.multiply(object.matrix);
+			// new code for Three.JS r55+:
+			object.matrix.multiply(rotWorldMatrix);                // pre-multiply
+
+			// old code for Three.js pre r49:
+			// object.rotation.getRotationFromMatrix(object.matrix, object.scale);
+			// old code for Three.js pre r59:
+			// object.rotation.setEulerFromRotationMatrix(object.matrix);
+			// code for r59+:
+			object.rotation.setFromRotationMatrix(object.matrix,'XYZ');
+		}
+		
+		function init() {
+			container = document.getElementById( 'canvas' );
+			//container.style.position = 'absolute';
+			//container.style.left = "0%";
+			//container.style.top = "-5%";
+			document.getElementById( 'canvasContainer' ).appendChild( container );
+			
+			renderer = new THREE.WebGLRenderer( { alpha: true, antialias: true } );
+			//renderer = new THREE.CanvasRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setClearColor( 0x000000,0 );
+			renderer.setSize( WIDTH, HEIGHT);
+			//renderer.setSize(, container.style.height);
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			container.appendChild( renderer.domElement );
+			camera = new THREE.PerspectiveCamera(10, WIDTH / (HEIGHT*heightScale), 1, 1000 );
+			camera.position.y = 47;
+			//camera.position.y = 0;
+			camera.position.z = 1.8;
+			//camera.position.z = -30;
+			camera.position.x = 0;
+			camera.up = new THREE.Vector3(0,0,-1);
+			camera.lookAt(new THREE.Vector3(-.4,0,2.3));
+
+			scene = new THREE.Scene();
+			
+			spotlight = new THREE.SpotLight( 0xffffff);
+			spotlight.shadowDarkness = 0.5;
+			spotlight.intensity = 1.5;
+			spotlight.position.set(22,40,-10);
+			spotlight.exponent=0;
+			spotlight.distance = 200;
+			spotlight.shadowCameraNear	= 0.01;		
+			spotlight.castShadow		= true;
+			spotlight.shadowMapWidth = 2048; // default is 512
+			spotlight.shadowMapHeight = 2048; // default is 512
+			//spotlight.shadowCameraVisible = true;
+			scene.add( spotlight );
+			
+			/*
+			light1 = new THREE.DirectionalLight( 0xffffff );
+			light1.position.set( -5, 5, -5 );
+			scene.add( light1 );
+
+			
+			light2 = new THREE.DirectionalLight( 0xffffff );
+			light2.position.set( 5, 5, -5 );
+			scene.add( light2 );
+			*/
+			var loader = new THREE.JSONLoader();
+			loader.load( "resources/sebastian/Arrow.js", addArrow);
+			
+			loader.load( "resources/sebastian/Sebastian_Torso.js", 
+				function ( geometry, material ){
+					var newMaterial = new THREE.MeshBasicMaterial( {transparent: true, opacity:0} );
+					torso = new THREE.Mesh( geometry, newMaterial );
+					scene.add( torso );
+				});
+			loader.load( "resources/sebastian/Sebastian_Hips.js", 
+				function ( geometry, material ){
+					var newMaterial = new THREE.MeshBasicMaterial( {transparent: true, opacity:0} );
+					hips = new THREE.Mesh( geometry, newMaterial );
+					scene.add( hips );
+				});
+			
+			loader.load( "resources/sebastian/butt.js", 
+				function ( geometry, material ){
+					var material = new THREE.MeshFaceMaterial( material );
+					butt = new THREE.Mesh( geometry, material );
+					scene.add( butt );
+					butt.receiveShadow = true;
+				});
+			
+			Sebastian = new THREE.BlendCharacter();
+			Sebastian.load( "resources/sebastian/Sebastian.js", start );
+			
+			document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+			document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+			document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+			window.addEventListener( 'resize', onWindowResize, false );
+			
+			stats = new Stats();
+			container.appendChild( stats.domElement );
+		}
+		
+		function makePhysics(){
+			world = new p2.World({
+                doProfiling : true,
+                gravity : [0,0]
+            });
+			
+			world.solver.tolerance = 0.001;
+			
+            var box1 = new p2.Body({
+                fixedRotation:true,
+				mass : 1,
+				damping : bodyDamp,
+                position : [0, 0],
+            });
+            var box2 = new p2.Body({
+                fixedRotation:true,
+				mass : 1,
+				damping : bodyDamp,
+                position : [0, 0],
+            });
+			var top = new p2.Body({
+				fixedRotation:true,
+				mass:0,
+				position:[0,0],
+			});
+			var bottom = new p2.Body({
+				fixedRotation:true,
+				mass:0,
+				position:[0,0],
+			});
+			world.addBody(box1);
+            world.addBody(box2);
+			world.addBody(top);
+			
+			// Create circle
+            var radius = 1;
+            var circleShape = new p2.Circle({radius: radius});
+            circle1 = new p2.Body({
+                mass : 1,
+				angularDamping : .9,
+                position : [0, 0]
+            });
+            circle1.addShape(circleShape);
+            world.addBody(circle1);
+			
+			// Create circle
+			var radius = .8;
+            var circleShape = new p2.Circle({radius: radius});
+            circle2 = new p2.Body({
+                mass : 1,
+				angularDamping : .9,
+                position : [0, 0]
+            });
+            circle2.addShape(circleShape);
+            world.addBody(circle2);
+			
+			// Disable collisions
+            var	CIRCLE  = 1,
+                OTHER = 8;
+			circleShape	.collisionGroup = CIRCLE;
+			circleShape .collisionMask  = OTHER;
+			
+			//RoationalJoint 1
+			rotationalSpring = new p2.RotationalSpring(box1, circle1, {
+                stiffness : rotStiff,
+                angularDamping: rotDamp
+            });
+			world.addSpring(rotationalSpring);
+			var revolute = new p2.RevoluteConstraint(box1, circle1, {
+                localPivotA: [0, 0],
+                localPivotB: [0, 0],
+                collideConnected:false
+            });
+            world.addConstraint(revolute);
+			
+			//RoationalJoint2
+			rotationalSpring = new p2.RotationalSpring(box2, circle2, {
+                stiffness : rotStiff,
+                angularDamping: rotDamp
+            });
+			world.addSpring(rotationalSpring);
+			var revolute = new p2.RevoluteConstraint(box2, circle2, {
+                localPivotA: [0, 0],
+                localPivotB: [0, 0],
+                collideConnected:false
+            });
+            world.addConstraint(revolute);
+			
+            var linearSpring = new p2.LinearSpring(box1, box2, {
+                restLength : 0,
+                stiffness : 15,
+				damping:10,
+                localAnchorA : [0,0],
+                localAnchorB : [0,0],
+            });
+            world.addSpring(linearSpring);
+			
+			rotationalSpring3 = new p2.RotationalSpring(circle1, circle2, {
+                stiffness : 10,
+                damping: 100
+            });
+			world.addSpring(rotationalSpring3);
+			
+			var s2 = new p2.LinearSpring(box1, top, {
+                restLength : 0,
+                stiffness : 20,
+				damping:10,
+                localAnchorA : [0,0],
+                localAnchorB : [0,0],
+            });
+            world.addSpring(s2);
+			
+			var s3 = new p2.LinearSpring(box2, bottom, {
+                restLength : 0,
+                stiffness : 20,
+				damping:10,
+                localAnchorA : [0,0],
+                localAnchorB : [0,0],
+            });
+            world.addSpring(s3);
+
+		}
+		
+		function onWindowResize() {
+			WIDTH = window.innerHeight*.49442;
+			HEIGHT = window.innerHeight*.8;
+			
+			windowHalfX = WIDTH / 2;
+			windowHalfY = HEIGHT / 2;
+			
+			camera.aspect = (WIDTH) / (HEIGHT*heightScale);
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(WIDTH , HEIGHT*heightScale);
+
+		}
+		
+		function onDocumentMouseDown( event ) {
+
+			event.preventDefault();
+			
+			translation = randomInCylinder();
+			
+		/*	var geometry = new THREE.SphereGeometry( .5, 10, 10 );
+			var material = new THREE.MeshLambertMaterial( {color: 0xffff00} );
+			var sphere = new THREE.Mesh( geometry, material );
+			scene.add( sphere );
+			sphere.translateX(translation.x);
+			sphere.translateY(translation.y);
+			sphere.translateZ(translation.z); */
+			
+			mouseX = event.clientX - window.innerWidth/2;
+			mouseY = event.clientY - window.innerHeight/2;
+			
+			arrowOriginX = mouseX/windowHalfX + camera.position.x;
+			arrowOriginZ = 1.25*mouseY/windowHalfY  + camera.position.z;
+			arrowOriginY =  camera.position.y -25;
+			//arrowOriginY =  13 -5;
+			//arrowOriginZ =  1.8;
+			//arrowOriginX =  .2;
+			
+			
+			
+			/*
+			console.log(arrowOriginX);
+			console.log(arrowOriginZ);
+			
+			geometry = new THREE.Geometry(),
+			material = new THREE.LineBasicMaterial({ color: 0x0000FF });
+			geometry.vertices.push(
+				new THREE.Vector3(
+					arrowOriginX,	arrowOriginY, arrowOriginZ));
+
+			geometry.vertices.push(
+				new THREE.Vector3(
+					translation.x,	translation.y, translation.z));
+					
+			var line = new THREE.Line( geometry, material );
+			scene.add( line );
+			*/
+
+			if(arrowCoolDown<=0){
+				var topOrBottom = Math.round(Math.random());
+				//document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				//document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+				//document.addEventListener( 'mouseout', onDocumentMouseOut, false );
+				topOrBottom = false;
+				if(topOrBottom){
+					arrowY = Math.random()*3.1-1.4;
+					arrowZ = -2.0*Math.random()+.4;
+					arrowX = 1-arrowY/2;
+					//arrowX = Math.random();
+					addArrowBottom(arrow.geometry,arrow.material.materials);
+				}
+				else{
+					arrowY = Math.random()*3-1.2;
+					arrowZ = -2.8*Math.random()-.7;
+					arrowX = -1+arrowY/2;
+					addArrowTop(arrow.geometry,arrow.material.materials);
+				}
+			}
+
+		}
+
+		function onDocumentMouseMove( event ) {
+
+			mouseX = event.clientX - window.innerWidth/2;
+			mouseY = event.clientY - window.innerHeight/2;
+			
+
+			targetRotationX = targetRotationOnMouseDownX + ( mouseX - mouseXOnMouseDown ) / windowHalfX;
+			targetRotationY = targetRotationOnMouseDownY + ( mouseY - mouseYOnMouseDown ) / windowHalfY;
+			
+			targetRotationX = Math.min(targetRotationX,tiltSize);
+			targetRotationX = Math.max(targetRotationX,-1*tiltSize);
+			
+			targetRotationY = Math.min(targetRotationY,tiltSize);
+			targetRotationY = Math.max(targetRotationY,-1*tiltSize);
+
+		}
+
+		function onDocumentMouseUp( event ) {
+
+			document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+			document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+			document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+
+		}
+
+		function onDocumentMouseOut( event ) {
+
+			//document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+			//document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+			//document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+
+		}
+
+		function onDocumentTouchStart( event ) {
+
+			if ( event.touches.length === 1 ) {
+
+				event.preventDefault();
+
+				mouseX = event.clientX - window.innerWidth/2;
+				mouseY = event.clientY - window.innerHeight/2;
+				targetRotationOnMouseDownX = targetRotationX;
+				targetRotationOnMouseDownY = targetRotationY;
+
+			}
+
+		}
+
+		function onDocumentTouchMove( event ) {
+
+			if ( event.touches.length === 1 ) {
+
+				event.preventDefault();
+
+				mouseX = event.touches[ 0 ].pageX - windowHalfX;
+				targetRotationX = targetRotationOnMouseDownX + ( mouseX - mouseXOnMouseDownY ) * 0.05;
+				targetRotationX = targetRotationOnMouseDownX + ( mouseY - mouseXOnMouseDownY ) * 0.05;
+
+			}
+
+		}
+		
+		function start() {
+			Sebastian.castShadow = false;
+			Sebastian.receiveShadow = true;
+			scene.add( Sebastian );
+			Sebastian.geometry.dynamic = true;
+			//console.error(Sebastian.skeleton);
+			
+			/*
+			var segmentCount = 10,
+			radius = 3,
+			geometry = new THREE.Geometry(),
+			material = new THREE.LineBasicMaterial({ color: 0x0000FF });
+			geometry.vertices.push(new THREE.Vector3(0,0,0));
+			for (var i = 0; i <= segmentCount; i++) {
+				var theta = (i / segmentCount) * Math.PI * 2;
+				geometry.vertices.push(
+					new THREE.Vector3(
+						Math.cos(theta) * radius,
+						Math.sin(theta) * radius,
+						0));
+			}
+			titA= new THREE.Line( geometry, material );
+			material = new THREE.LineBasicMaterial({ color: 0x00FF00 });
+			titB= new THREE.Line( geometry, material );
+			
+			//Sebastian.children[0].children[0].add(titA);
+			scene.add(titA);
+			titA.translateZ(2);
+			//Sebastian.children[0].children[0].children[0].add(titB);
+			scene.add(titB);
+			*/
+			geometry = new THREE.Geometry();
+			geometry.vertices.push(new THREE.Vector3(0,0,0));
+			geometry.vertices.push(new THREE.Vector3(0,0,0));
+			var material = new THREE.LineBasicMaterial( {color: 0xFF0000} );
+			forceLine = new THREE.Line( geometry, material );
+			scene.add( forceLine );
+			forceLine.visibile = false;
+			
+			boneRot1.copy(Sebastian.skeleton.bones[1].rotation);
+			boneRot2.copy(Sebastian.skeleton.bones[2].rotation);
+			boneRot2.copy(Sebastian.skeleton.bones[2].getWorldRotation());
+			
+			//bone2parent.parent = Sebastian.skeleton.bones[1];
+			//bone2parent.position.copy(Sebastian.skeleton.bones[2].position);
+			
+			object = new THREE.Object3D();
+			Sebastian.skeleton.bones[1].add(object);
+			object.position.copy(Sebastian.skeleton.bones[2].position);
+			bone2parent.parent = object;
+			
+			Sebastian.skeleton.bones[2].parent = bone2parent;
+			Sebastian.skeleton.bones[2].position.set(0,0,0);
+			//Sebastian.skeleton.bones[2].position.set(0,0,3.89165)
+			//Sebastian.skeleton.bones[2].rotation.set(0,0,0);
+			
+			//Sebastian.material.transparent=true;
+			//Sebastian.material.opacity = 0;
+		}
+		
+		function animate() {
+			requestAnimationFrame( animate );
+			frameMS = Math.min((Date.now() - oldTime)/1000,1/30);
+			world.step(frameMS);
+			oldTime=Date.now();
+			
+			if(typeof torso !== 'undefined' && torso.parent !== Sebastian.skeleton.bones[1]){
+				THREE.SceneUtils.attach(torso, scene,Sebastian.skeleton.bones[1]);
+			}
+			if(typeof hips !== 'undefined' && hips.parent !== Sebastian.skeleton.bones[2]){
+				THREE.SceneUtils.attach(hips, scene,Sebastian.skeleton.bones[2]);
+			}
+			if(typeof butt !== 'undefined' && butt.parent !== Sebastian.skeleton.bones[2]){
+				THREE.SceneUtils.attach(butt, scene,Sebastian.skeleton.bones[2]);
+			}
+			
+			if(arrowCoolDown>0){
+				arrowCoolDown -=1;
+				if(arrowLive){
+					originVector = arrow.localToWorld(raycasterVector.clone());
+					directionVector = arrow.position.clone().sub(originVector).normalize();
+					raycaster.set(originVector,directionVector, 0, 1);
+					raycaster.far = rayDist;
+					hitArray = raycaster.intersectObjects([hips,torso]);
+					if (hitArray.length>0){
+						arrowLive = false;
+						console.log("HIT");
+						THREE.SceneUtils.attach( arrow, scene, hitArray[0].object);
+						var forcePos = arrow.getWorldPosition();
+						forcePos.multiplyScalar(.1);
+						forceLine.position.copy(forcePos);
+						forceLine.geometry.vertices[1].set(0,0,hitPower);
+						forceLine.geometry.vertices[1].applyEuler(arrow.getWorldRotation())
+						forceLine.geometry.verticesNeedUpdate = true;
+						forceLine.visible = false;
+						
+						if(hitArray[0].object.uuid==torso.uuid){
+							console.log("Hit Torso");
+							circle1.applyForce([forceLine.geometry.vertices[1].x,forceLine.geometry.vertices[1].y],[circle1.position[0]+forcePos.x,
+														circle1.position[1]+forcePos.y]);
+							forceLine.position.set(forceLine.position.x,forceLine.position.y,0);
+						}
+						if(hitArray[0].object.uuid==hips.uuid){
+							console.log("Hit Hips");
+							circle2.applyForce([forceLine.geometry.vertices[1].x,forceLine.geometry.vertices[1].y],[circle2.position[0]+forcePos.x,
+														circle2.position[1]+forcePos.y]);
+							forceLine.position.set(forceLine.position.x,forceLine.position.y,0);
+						}
+						
+						/*
+						hitPos = arrow.position.clone();
+						hitPos = Sebastian.skeleton.bones[i].worldToLocal(hitPos);
+						arrow.parent = Sebastian.skeleton.bones[i];
+						arrow.position.copy(hitPos);
+						arrow.updateMatrixWorld();
+						*/
+						arrow.translateZ(arrowDist/arrowSteps/2);
+					}
+					else{
+						arrow.translateZ(arrowDist/arrowSteps);
+					}
+					}
+			}
+			else{
+				if(arrowLive){
+					console.log("MISS");
+					scene.remove(arrow);
+					arrowLive = false;
+				}
+			}
+
+			
+			pushVector = new THREE.Vector3(-1*circle1.position[1],-1*circle1.position[0],0);
+			Sebastian.skeleton.bones[1].matrix.makeRotationFromEuler(boneRot1);
+			rotateAroundWorldAxis(Sebastian.skeleton.bones[1],xAxis,pushVector.x);
+			rotateAroundWorldAxis(Sebastian.skeleton.bones[1],yAxis,pushVector.y);
+			Sebastian.skeleton.bones[1].rotation.z=-1*circle1.angle*2+boneRot1.z;
+			Sebastian.skeleton.bones[2].position.copy(object.getWorldPosition());
+			/*
+			var transformMatrix = new THREE.Matrix4;
+			transformMatrix.makeRotationFromEuler(boneRot2);
+			var inverseRotation = Sebastian.skeleton.bones[1].rotation.clone();
+			inverseRotation.set(inverseRotation.x*-1,inverseRotation.y*-1,inverseRotation.z*-1);
+			var inverseMatrix = new THREE.Matrix4;
+			inverseMatrix.makeRotationFromEuler(inverseRotation);
+			inverseMatrix.clone(Sebastian.skeleton.bones[1].matrix);
+			transformMatrix.multiplyMatrices(transformMatrix,inverseMatrix);
+			Sebastian.skeleton.bones[2].matrix.copy(transformMatrix);
+			*/
+			Sebastian.skeleton.bones[2].matrix.makeRotationFromEuler(boneRot2);
+			pushVector = new THREE.Vector3(-1*circle2.position[0],-1*circle2.position[1],0);
+			rotateAroundWorldAxis(Sebastian.skeleton.bones[2],xAxis,pushVector.x);
+			rotateAroundWorldAxis(Sebastian.skeleton.bones[2],yAxis,pushVector.y);
+			Sebastian.skeleton.bones[2].rotation.z=-1*circle2.angle*2+boneRot2.z;
+			
+			
+			Sebastian.geometry.verticesNeedUpdate = true;
+			Sebastian.geometry.normalsNeedUpdate = true;
+			Sebastian.geometry.verticesNeedUpdate = true;
+			Sebastian.geometry.normalsNeedUpdate = true; 
+			Sebastian.geometry.computeFaceNormals(); 
+			Sebastian.geometry.computeVertexNormals(); 
+			Sebastian.geometry.computeBoundingSphere();
+			
+			//titA.position.x = circle1.position[0]*2;
+			//titA.position.y = circle1.position[1]*2;
+			//titA.rotation.z = circle1.angle;
+			
+			//titB.position.x = circle2.position[0]*2;
+			//titB.position.y = circle2.position[1]*2;
+			//titB.rotation.z = circle2.angle;
+			
+			stats.update();
+			render();
+			
+		}
+
+		function render() {		
+			renderer.render( scene, camera );
+		}
+		
+		function randomInCylinder(){
+			var zPos = (Math.random()*2*hitZoneH) - hitZoneH + hitZoneZ;
+			var angle = (Math.random()*2*Math.PI);
+			var radius = Math.random()*hitZoneR; 
+			var xPos = radius*Math.sin(angle);
+			var yPos = radius*Math.cos(angle);
+			return new THREE.Vector3( xPos, yPos, zPos);
+		}
+		
+		function addArrow(geometry,materials){
+			var material = new THREE.MeshFaceMaterial( materials );
+			arrow = new THREE.Mesh( geometry, material);
+			arrow.position.x=arrowY;
+			arrow.position.y=arrowX;
+			arrow.position.z=arrowZ;
+			scene.add(arrow);
+		}
+		
+		function addArrowTop(geometry,materials){
+			var material = new THREE.MeshFaceMaterial( materials );
+			arrow = new THREE.Mesh( geometry, material);
+			arrow.position.x=arrowOriginX;
+			arrow.position.y=arrowOriginY;
+			arrow.position.z=arrowOriginZ;
+			arrow.lookAt(translation);
+			arrow.castShadow= true;
+			scene.add(arrow);
+			arrowLive = true;
+			arrowCoolDown = arrowSteps;
+		}
+		
+		function addArrowBottom(geometry,materials){
+			var material = new THREE.MeshFaceMaterial( materials );
+			arrow = new THREE.Mesh( geometry, material);
+			arrow.position.x=arrowX;
+			arrow.position.y=arrowY;
+			arrow.position.z=arrowZ;
+			arrow.rotation.z=-1*Math.PI/2;
+			arrow.castShadow= true;
+			Sebastian.children[0].children[0].children[0].add(arrow);
+			arrowCoolDown = arrowSteps;
+			arrow.translateY(arrowDist);
+		}
+
+		</script>
+		
+
+	</body>
+</html>

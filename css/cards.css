@@ -1,0 +1,57 @@
+body {
+	font-family: Monospace;
+	background-color: #ffffff;
+	margin: 0px;
+	overflow: hidden;
+}
+
+div.card {
+	height : 80vh;
+	width : 49.442vh;
+	z-index: -1;
+	background:#e4e4e4;
+	border: 3vh solid;
+	border-color:white;
+    border-radius: 3vh;
+	box-shadow: 0px 0px 28px #aaaaaa;
+	/* golden ratio 1.61803398875 */
+	margin-left: auto;
+    margin-right: auto; 
+
+}
+
+p.card {
+	font-family:Georgia;
+	font-size:1.8vh;
+	line-height:5.3vh;
+	color:#5b5b5b;
+	margin:15%;
+	padding-top:80%;
+	text-align: center;
+	/*text-align: justify;*/
+}
+
+.outer {
+    display: table;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+	z-index:-1;
+}
+
+.middle {
+    display: table-cell;
+    vertical-align: middle;
+	z-index:-1;
+}
+
+.outerRel {
+    display: table;
+    height: 100%;
+    width: 100%;
+	z-index:-1;
+}
+
+#canvas {
+    z-index:100;
+}
