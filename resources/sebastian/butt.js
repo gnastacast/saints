@@ -19,7 +19,7 @@
         "depthWrite": true,
         "DbgColor": 15658734,
         "DbgIndex": 0,
-        "mapDiffuse": "buttMap.png"
+        "mapDiffuse": "buttMap.jpg"
     }],
     "metadata": {
         "faces": 95,

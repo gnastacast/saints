@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>three.js canvas - geometry - platter</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="js/Swiper-3.3.1/css/swiper.min.css">
+        <!--<link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC' rel='stylesheet' type='text/css'>-->
+        <link rel="stylesheet" type="text/css" href="css/cards.css">
+    </head>
+
+    <body>
+        <!-- Slider main container -->
+        <div class="swiper-container main">
+            <!-- Additional required wrapper -->
+            <div class="swiper-wrapper swiper-wrapper-main">
+                <div class="swiper-slide">
+                    <div class="card text">
+                        <div class="gold-border"></div>
+                        <div class="text-shifter">
+                            <h1 style="color:#5b5b5b">SAINT SIMULATOR</h1>
+                            <p>
+                                Nico Zevallos 2016
+                            </p>
+                            <img src="images/Seal.png" alt="Seal of the Vatican">
+                            <p>
+                               Use your mouse or your finger to swipe from card to card. Press and drag on an image of a saint to interact with it.
+                            </p>
+                            <p class="caption">
+                                Made using <a href="http://threejs.org/">three.js</a>, <a href="https://schteppe.github.io/p2.js/">p2.js</a>, and <a href="http://idangero.us/swiper/">swiper.js</a>
+                            </p>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="swiper-container subA">
+                        <div class="swiper-wrapper swiper-wrapper-subA">
+                            <!-- Slides -->
+                            <div class="swiper-slide">
+                                <div class="card saint-holder">
+                                    <div class="gold-border"></div>
+                                    <div id="saint"></div>
+                                </div>
+                            </div>
+                            <div class="swiper-slide">
+                                <div class="card text">
+                                    <div class="gold-border"></div>
+                                    <div class="text-shifter">
+                                        <h1>ST. AGATHA,</h1>
+                                        <p>
+                                           You heroically resisted the temptations of a degenerate ruler. Subjected to long and horrible tortures, you remained faithful to your heavenly Spouse. Hear the prayers of those who recall your devoted life and who ask you to intercede for them in their necessity. Guard us against breast cancer and other afflictions of women and help us imitate your virtue during our earthly life and enjoy eternal happiness with you and all the saints in heaven. <br/>
+                                           <i>Amen</i>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="swiper-container subB">
+                        <div class="swiper-wrapper swiper-wrapper-subB">
+                            <!-- Slides -->
+                            <div class="swiper-slide">
+                                <div class="card saint-holder">
+                                    <div class="gold-border"></div>
+                                </div>
+                            </div>
+                            <div class="swiper-slide">
+                                <div class="card text">
+                                    <div class="gold-border"></div>
+                                    <div class="text-shifter">
+                                        <h1>ST. SEBASTIAN,</h1>
+                                        <p>
+                                           Dear Commander at the Roman Emperor's court. You chose to be also a soldier of Christ and dared spread faith in the King of Kings for which you were condemned to die. Your body, however, proved athletically strong and the executing arrows extremely weak. So another means to kill you was chosen and you gave your life to the Lord. May athletes be always as strong in their faith as their Patron Saint so clearly has been.<br/>
+                                           <i>Amen</i>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="swiper-container subC">
+                        <div class="swiper-wrapper swiper-wrapper-subC">
+                            <!-- Slides -->
+                            <div class="swiper-slide">
+                                <div class="card saint-holder">
+                                    <div class="gold-border"></div>
+                                </div>
+                            </div>
+                            <div class="swiper-slide">
+                                <div class="card text">
+                                    <div class="gold-border"></div>
+                                    <div class="text-shifter">
+                                        <h1>ST. BARTHOLEMEW,</h1>
+                                        <p>
+                                           Jesus called you a person without guile and you saw in this word a sign that he was the Son of God and King of Israel. Obtain for us the grace to be ever guileless and innocent as doves. At the same time, help us to have your gift of faith to see the Divine hand in the events of daily life. May we discern <br/>
+                                           the signs of the times that lead to Jesus on earth and will eventually unite us to him forever in heaven.<br/>
+                                           <i>Amen</i>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="load-screen">
+            <div id="seal"><p>LOADING</p></div>
+        </div>
+        <script src="js/three.min.js"></script>
+        <script src="js/Detector.js"></script>
+        <script src="js/Swiper-3.3.1/js/swiper.min.js"></script>
+        <script>
+            // scene size
+            WIDTH = window.innerHeight*0.49442;
+            HEIGHT = window.innerHeight*0.8;
+            var camera, scene, renderer, saintContainer;
+            var mouse = new THREE.Vector2();
+            var raycaster = new THREE.Raycaster();
+            var getImageData = false;
+            var currentSlideNum=0, oldSlide=0;
+            var currentSubSlide=0, oldSubSlide=0;
+
+            init();
+
+            function init() {
+                // Saint renderer
+                saintContainer = document.getElementById('saint');
+                renderer = new THREE.WebGLRenderer( { alpha: true, antialias: true } );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setClearColor( 0x000000,0 );
+                renderer.setSize( WIDTH, HEIGHT);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.shadowMap.CullFace = THREE.CullFaceFront;
+                saintContainer.innerHTML = '';
+                renderer.domElement.id = "saintCanvas";
+                saintContainer.appendChild(renderer.domElement);
+                
+                camera = new THREE.PerspectiveCamera( 50, WIDTH / (HEIGHT), 1, 1000 );
+                camera.position.y = 30;
+                camera.position.z = 100;
+                //camera.rotation.x = -.6;
+                camera.up = new THREE.Vector3(0,0,-1);
+                camera.lookAt(new THREE.Vector3(0,0,40));
+
+                scene = new THREE.Scene();
+                        
+                window.addEventListener( 'resize', onWindowResize, false );
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+                document.addEventListener( 'touchstart', onDocumentMouseDown, false );
+                document.addEventListener( 'touchend', onDocumentMouseUp, false );
+                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+                document.addEventListener( 'touchmove', onDocumentMouseMove, false );
+            }
+
+            function getMousePos(eventPos){
+                mouse.x = ( eventPos.pageX*1.0 / window.innerWidth ) * 2 - 1;
+                mouse.y = - ( eventPos.pageY*1.0 / window.innerHeight ) * 2 + 1;
+                mouse.x = mouse.x / (WIDTH/window.innerWidth);
+                mouse.y = mouse.y / (HEIGHT/window.innerHeight);
+            }
+
+            function onDocumentMouseDown( event ) {
+                if(currentSubSlide != 1) {
+                    if(event.touches == undefined) { getMousePos( event ); }
+                    else { getMousePos(event.touches[0]); }
+                    if(Math.abs(mouse.x) > 1 || Math.abs(mouse.y) > 1){ return; }
+                    raycaster.setFromCamera( mouse, camera );
+                    var intersects = raycaster.intersectObjects( scene.children );
+                    if ( intersects.length > 0){
+                        mySwiperSubA.lockSwipes();
+                        mySwiperSubB.lockSwipes();
+                        mySwiperSubC.lockSwipes();
+                        mySwiper.lockSwipes();
+                        if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
+                            saintLoader.saints[currentSlideNum-1].onPress(mouse,intersects);
+                        }
+                    }
+                }
+            }
+
+            function onDocumentMouseUp( event ) {
+                mySwiperSubA.unlockSwipes();
+                mySwiperSubB.unlockSwipes();
+                mySwiperSubC.unlockSwipes();
+                mySwiper.unlockSwipes();
+                if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
+                    saintLoader.saints[currentSlideNum-1].onRelease();
+                }
+            }
+
+            function onDocumentMouseMove(event) {
+                if(event.touches == undefined) { getMousePos( event ); }
+                else { getMousePos(event.touches[0]); }
+                if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
+                    saintLoader.saints[currentSlideNum-1].onMove(mouse,[]);
+                }
+            }
+
+            function onWindowResize() {
+                WIDTH = window.innerHeight*0.49442;
+                HEIGHT = window.innerHeight*0.8;
+                windowHalfX = WIDTH / 2;
+                windowHalfY = HEIGHT / 2;
+                camera.aspect = (WIDTH) / (HEIGHT);
+                camera.updateProjectionMatrix();
+                renderer.setSize(WIDTH , HEIGHT);
+                mySwiper.onResize();
+            }
+
+            function render() {
+                if (currentSlideNum !== 0 && subSwipers != undefined) {
+                    currentSubSlide = subSwipers[currentSlideNum-1].activeIndex;
+                }
+                if(currentSubSlide!= oldSubSlide) {
+                    oldSubSlide = currentSubSlide;
+                    if(currentSubSlide == 1) {
+                        saintContainer.style.display = 'none';
+                    }
+                    else {
+                        saintContainer.style.display = 'block';
+                    }
+
+                }
+                requestAnimationFrame(render);
+                if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
+                    saintLoader.saints[currentSlideNum-1].animate();
+                }
+                if(currentSlideNum !== 0 && currentSlideNum!=oldSlide){
+                    if (saintLoader.saints.length == 3) {
+                        if(oldSlide !== 0) { saintLoader.saints[oldSlide -1].hide(); }
+                        saintLoader.saints[currentSlideNum-1].show();
+                        oldSlide = currentSlideNum;
+                    }
+                }
+                renderer.render( scene, camera );
+            }
+            
+            var swiperSubParams =  {// Optional parameters
+                                    direction: 'horizontal',
+                                    watchSlidesProgress:true,
+                                    loop: false,
+                                    runCallbacksOnInit:true,
+                                    //touchEventsTarget:'swiper-wrapper-subA',
+                                    touchEventsTarget:'swiper-wrapper-main',
+                                    nested:true,
+                                    longSwipesRatio:0.3,
+                                    touchRatio:1,
+                                    effect:'flip',
+                                    flip: { slideShadows : false,
+                                            limitRotation: true  },
+                                    resistanceRatio:0 };
+
+            var mySwiperSubA = new Swiper('.subA', swiperSubParams);
+            //swiperSubParams.touchEventsTarget = 'swiper-wrapper-subB';
+            var mySwiperSubB = new Swiper('.subB', swiperSubParams);
+            //swiperSubParams.touchEventsTarget = 'swiper-wrapper-subC';
+            var mySwiperSubC = new Swiper('.subC', swiperSubParams);
+
+            var subSwipers = [mySwiperSubA,mySwiperSubB,mySwiperSubC];
+
+            var mySwiper = new Swiper('.main', {
+                direction: 'horizontal',
+                watchSlidesProgress:true,
+                loop: false,
+                runCallbacksOnInit:true,
+                touchEventsTarget:'swiper-wrapper-main',
+                longSwipesRatio:0.3,
+                touchRatio:1,
+                effect:'slide',
+                spaceBetween: 20
+            });
+
+            mySwiper.onTransitionStart=function(swiper, event){
+                currentSlide = this.slides[this.activeIndex];
+                currentSlideNum = currentSlide.getAttribute('data-swiper-slide-index');
+                if(currentSlideNum === null) { currentSlideNum = this.activeIndex; }
+                if(currentSlideNum !== 0){
+                    elem = currentSlide.getElementsByClassName('saint-holder')[0]
+                    //elem.insertBefore( saintContainer, elem.firstChild );
+                    elem.appendChild(saintContainer, elem.firstChild );
+                    if(elem.children.length > 2){
+                        elem.children[2].style.display = 'none';
+                    }
+                }
+            };
+        </script>
+        <script src="js/meshCloth.js"></script>
+        <script src="js/p2.min.js"></script>
+        <script type="text/javascript" src="js/saints.js"></script>
+        <script type="text/javascript">
+            render();
+        </script>
+    </body>
+</html>

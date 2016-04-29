@@ -1,57 +1,151 @@
+
 body {
-	font-family: Monospace;
-	background-color: #ffffff;
+	font-family: georgia, serif;
+    /*font-family: 'IM Fell English SC', serif;*/
+	/*background-color: #e4e4e4;*/
+    background-color:white;
 	margin: 0px;
 	overflow: hidden;
 }
 
 div.card {
+    margin-top:7vh;
 	height : 80vh;
 	width : 49.442vh;
-	z-index: -1;
-	background:#e4e4e4;
+	z-index: 0;
+	background:#e4e4e4 url(../images/Paper.jpg);
 	border: 3vh solid;
 	border-color:white;
-    border-radius: 3vh;
-	box-shadow: 0px 0px 28px #aaaaaa;
+    border-radius: 5vh;
+	box-shadow: 0px 0px 5vh #CCC;/*#aaa*/
 	/* golden ratio 1.61803398875 */
 	margin-left: auto;
-    margin-right: auto; 
-
+    margin-right: auto;
 }
 
-p.card {
-	font-family:Georgia;
-	font-size:1.8vh;
-	line-height:5.3vh;
-	color:#5b5b5b;
-	margin:15%;
-	padding-top:80%;
-	text-align: center;
-	/*text-align: justify;*/
+.card p {
+    font-size: 2vh;
+    line-height: 5.3vh;
+    color: #5b5b5b;
+    margin: 0% 10%;
+    text-align: center;
 }
 
-.outer {
-    display: table;
-    position: absolute;
+.card .caption {
+    color: #7b7b7b;
+    font-size: 1.5vh;
+}
+
+.card p i {
+    color:black;
+    font-weight:bold;
+}
+
+.card img {
+    padding: 5% 11.5vh;
+    width: 26.442vh;
+}
+
+.card a {
+    text-decoration: none;
+}
+
+.card h1 {
+    font-size:3vh;
+    line-height:0vh;
+    color:black;
+    margin-top: 15%;
+    margin-bottom: 10%;
+    text-align: center;
+}
+
+.swiper-container {
+    width:100%;
     height: 100%;
-    width: 100%;
-	z-index:-1;
+    /*background:#fff;*/
+    position:absolute;
 }
 
 .middle {
-    display: table-cell;
+    height:100%;
     vertical-align: middle;
 	z-index:-1;
 }
 
-.outerRel {
-    display: table;
-    height: 100%;
-    width: 100%;
-	z-index:-1;
+#canvas {
+    /*z-index:100;*/
 }
 
-#canvas {
-    z-index:100;
+#saintCanvas{
+    border-radius: 2vh;
+}
+
+#saint{
+    margin-top: -80.5vh;
+}
+
+
+.gold-border{
+    margin:2vh;
+    height:72.5vh;
+    border-style: solid;
+    border-width: 2vh;
+    -moz-border-image: url(../images/border.png) 19 round;
+    -webkit-border-image: url(../images/border.png) 19 round;
+    -o-border-image: url(../images/border.png) 19 round;
+    border-image: url(../images/border.png) 19 round;
+}
+
+.text-shifter{
+    margin-top:-78vh;
+}
+
+#load-screen{
+    display:none;
+    display:block;
+    position:absolute;
+    background: white;
+    height:100%;
+    width:100%;
+    z-index:1;
+}
+
+#load-screen.fadeOut {
+  -webkit-transition: 3s;
+  -moz-transition: 3s;
+  -ms-transition: 3s;
+  -o-transition: 3s;
+  transition: 3s;
+  opacity:0;
+}
+
+#load-screen #seal{
+    width:30vh;
+    height:38vh;
+    position: absolute;
+    left:50%;
+    top:49.25%;
+    margin-left:-15vh;
+    margin-top:-19vh;
+    background: url(../images/seal.gif);
+    background-size: 30vh 30vh;
+    background-repeat: no-repeat;
+}
+
+#load-screen #seal.fadeOut {
+  -webkit-transition: 1s;
+  -moz-transition: 1s;
+  -ms-transition: 1s;
+  -o-transition: 1s;
+  transition: 1s;
+  opacity:0;
+}
+
+#load-screen p {
+    font-size: 2vh;
+    line-height: 5.3vh;
+    color: #5b5b5b;
+    margin-top:30vh;
+    text-align: center;
+
 }
