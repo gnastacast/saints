@@ -4,8 +4,9 @@
         <title>three.js canvas - geometry - platter</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <link rel="stylesheet" type="text/css" href="js/Swiper-3.3.1/css/swiper.min.css">
+        <link rel="stylesheet" type="text/css" href="js/swiper-4.4.1/css/swiper.min.css">
         <!--<link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC' rel='stylesheet' type='text/css'>-->
+        <link rel="stylesheet" type="text/css" href="css/normalize.css">
         <link rel="stylesheet" type="text/css" href="css/cards.css">
     </head>
 
@@ -113,12 +114,14 @@
             <div id="seal"><p>LOADING</p></div>
         </div>
         <script src="js/three.min.js"></script>
-        <script src="js/Detector.js"></script>
-        <script src="js/Swiper-3.3.1/js/swiper.min.js"></script>
+        <script src="js/swiper-4.4.1/js/swiper.min.js"></script>
         <script>
             // scene size
-            WIDTH = window.innerHeight*0.49442;
-            HEIGHT = window.innerHeight*0.8;
+            HEIGHT = window.innerHeight * 0.84;
+            WIDTH = window.innerHeight * 0.49623;
+            document.documentElement.style.setProperty("--true-height",
+                                                       window.innerHeight + "px")
+
             var camera, scene, renderer, saintContainer;
             var mouse = new THREE.Vector2();
             var raycaster = new THREE.Raycaster();
@@ -134,7 +137,7 @@
                 renderer = new THREE.WebGLRenderer( { alpha: true, antialias: true } );
                 renderer.setPixelRatio( window.devicePixelRatio );
                 renderer.setClearColor( 0x000000,0 );
-                renderer.setSize( WIDTH, HEIGHT);
+                renderer.setSize(WIDTH, HEIGHT);
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 renderer.shadowMap.CullFace = THREE.CullFaceFront;
@@ -150,35 +153,37 @@
                 camera.lookAt(new THREE.Vector3(0,0,40));
 
                 scene = new THREE.Scene();
-                        
-                window.addEventListener( 'resize', onWindowResize, false );
-                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-                document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-                document.addEventListener( 'touchstart', onDocumentMouseDown, false );
-                document.addEventListener( 'touchend', onDocumentMouseUp, false );
-                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-                document.addEventListener( 'touchmove', onDocumentMouseMove, false );
+            
+                window.addEventListener(   'resize',     onWindowResize,      { passive: false } );
+                document.addEventListener( 'mousedown',  onDocumentMouseDown, { passive: false } );
+                document.addEventListener( 'mouseup',    onDocumentMouseUp,   { passive: false } );
+                document.addEventListener( 'touchstart', onDocumentMouseDown, { passive: false } );
+                document.addEventListener( 'touchend',   onDocumentMouseUp,   { passive: false } );
+                document.addEventListener( 'mousemove',  onDocumentMouseMove, { passive: false } );
+                document.addEventListener( 'touchmove',  onDocumentMouseMove, { passive: false } );
+                document.addEventListener( 'touchchange',  onDocumentMouseMove, function(e){ console.log(e); });
             }
 
             function getMousePos(eventPos){
-                mouse.x = ( eventPos.pageX*1.0 / window.innerWidth ) * 2 - 1;
-                mouse.y = - ( eventPos.pageY*1.0 / window.innerHeight ) * 2 + 1;
+                mouse.x = ( eventPos.clientX*1.0 / window.innerWidth ) * 2 - 1;
+                mouse.y = - ( eventPos.clientY*1.0 / window.innerHeight ) * 2 + 1;
                 mouse.x = mouse.x / (WIDTH/window.innerWidth);
                 mouse.y = mouse.y / (HEIGHT/window.innerHeight);
             }
 
             function onDocumentMouseDown( event ) {
-                if(currentSubSlide != 1) {
+                // event.preventDefault();
+                if(currentSubSlide != 1 && currentSlideNum != 0) {
                     if(event.touches == undefined) { getMousePos( event ); }
                     else { getMousePos(event.touches[0]); }
                     if(Math.abs(mouse.x) > 1 || Math.abs(mouse.y) > 1){ return; }
                     raycaster.setFromCamera( mouse, camera );
                     var intersects = raycaster.intersectObjects( scene.children );
                     if ( intersects.length > 0){
-                        mySwiperSubA.lockSwipes();
-                        mySwiperSubB.lockSwipes();
-                        mySwiperSubC.lockSwipes();
-                        mySwiper.lockSwipes();
+                        mySwiperSubA.allowTouchMove = false;
+                        mySwiperSubB.allowTouchMove = false;
+                        mySwiperSubC.allowTouchMove = false;
+                        mySwiper.allowTouchMove = false;
                         if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
                             saintLoader.saints[currentSlideNum-1].onPress(mouse,intersects);
                         }
@@ -187,16 +192,17 @@
             }
 
             function onDocumentMouseUp( event ) {
-                mySwiperSubA.unlockSwipes();
-                mySwiperSubB.unlockSwipes();
-                mySwiperSubC.unlockSwipes();
-                mySwiper.unlockSwipes();
+                mySwiperSubA.allowTouchMove = true;
+                mySwiperSubB.allowTouchMove = true;
+                mySwiperSubC.allowTouchMove = true;
+                mySwiper.allowTouchMove = true;
                 if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
                     saintLoader.saints[currentSlideNum-1].onRelease();
                 }
             }
 
             function onDocumentMouseMove(event) {
+                // event.preventDefault();
                 if(event.touches == undefined) { getMousePos( event ); }
                 else { getMousePos(event.touches[0]); }
                 if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
@@ -205,8 +211,10 @@
             }
 
             function onWindowResize() {
-                WIDTH = window.innerHeight*0.49442;
-                HEIGHT = window.innerHeight*0.8;
+                HEIGHT = window.innerHeight * 0.84;
+                WIDTH = window.innerHeight * 0.49623;
+                document.documentElement.style.setProperty("--true-height",
+                                                           window.innerHeight + "px")
                 windowHalfX = WIDTH / 2;
                 windowHalfY = HEIGHT / 2;
                 camera.aspect = (WIDTH) / (HEIGHT);
@@ -254,8 +262,8 @@
                                     longSwipesRatio:0.3,
                                     touchRatio:1,
                                     effect:'flip',
-                                    flip: { slideShadows : false,
-                                            limitRotation: true  },
+                                    flipEffect: { slideShadows : false,
+                                                  limitRotation: true  },
                                     resistanceRatio:0 };
 
             var mySwiperSubA = new Swiper('.subA', swiperSubParams);
@@ -278,7 +286,7 @@
                 spaceBetween: 20
             });
 
-            mySwiper.onTransitionStart=function(swiper, event){
+            mySwiper.on('transitionStart', function(swiper, event){
                 currentSlide = this.slides[this.activeIndex];
                 currentSlideNum = currentSlide.getAttribute('data-swiper-slide-index');
                 if(currentSlideNum === null) { currentSlideNum = this.activeIndex; }
@@ -290,10 +298,11 @@
                         elem.children[2].style.display = 'none';
                     }
                 }
-            };
+            });
         </script>
         <script src="js/meshCloth.js"></script>
         <script src="js/p2.min.js"></script>
+        <script src="js/loaders/GLTFLoader.js"></script>
         <script type="text/javascript" src="js/saints.js"></script>
         <script type="text/javascript">
             render();

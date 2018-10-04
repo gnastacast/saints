@@ -1,4 +1,20 @@
-// The particles we will be using to represent each vertex
+var DAMPING = 0.03;
+var DRAG = 1 - DAMPING;
+var MASS = 0.1;
+var floorZ = -450;
+
+var GRAVITY = 981 * 1.4; // 
+var gravity = new THREE.Vector3( 0, -GRAVITY, 0 ).multiplyScalar(MASS);
+
+var TIMESTEP = 18 / 1000;
+var TIMESTEP_SQ = TIMESTEP * TIMESTEP;
+
+var RIPDIST = 6;
+
+var tmpForce = new THREE.Vector3();
+
+var lastTime;
+
 function Particle(x, y, z, mass) {
 	this.position = new THREE.Vector3(x, y, z);
 	this.previous = new THREE.Vector3(x, y, z);
@@ -26,7 +42,20 @@ Particle.prototype.integrate = function(timesq) {
 	this.a.set(0, 0, 0);
 };
 
-// Make a cloth from any mesh geometry
+var diff3D = new THREE.Vector3();
+var currentDist = 0;
+
+function satisifyConstraints(p1, p2, distance) {
+	diff3D.subVectors(p2.position, p1.position);
+	currentDist = diff3D.length();
+	if (currentDist === 0) { return true; } // prevents division by 0
+	diff3D.multiplyScalar(1 - distance / currentDist);
+	diff3D.multiplyScalar(0.5);
+	p1.position.add(diff3D);
+	p2.position.sub(diff3D);
+	return currentDist < distance*RIPDIST;
+}
+
 function MeshCloth (geometry, obstacleObjects) {	
 	// Constructor-only private copies of variables
 	var verts = geometry.vertices;
@@ -83,9 +112,8 @@ function MeshCloth (geometry, obstacleObjects) {
 		return foo;
 	}
 	
-	// Private helper function that creates a 2D array.
-	// Each inner array represents all the redundant vertices that make up
-	// a signle unique vertex.
+	// Private helper function that creates an array of arrays.
+	// Each inner array represents a unique vertex.
 	function findUniqueVerts()  {
         uniqueVerts = [];
 		// Create a mutable array of indices that we can splice and iterate through
@@ -151,7 +179,6 @@ function MeshCloth (geometry, obstacleObjects) {
 		return edges;
 	}
 
-	// Public function for clicking and dragging the mesh;
 	this.grabFromFace = function(face,point) {
 		this.grab[0] = getUniqueIndex(face.a);
 		this.grab[2] = getUniqueIndex(face.b);
@@ -159,51 +186,13 @@ function MeshCloth (geometry, obstacleObjects) {
 		this.grab[3] = point;
 	};
 }
-
-// Variables for cloth physics
-
-var DAMPING = 0.03;
-var DRAG = 1 - DAMPING;
-var MASS = 0.1;
-var floorZ = -450;
-
-var GRAVITY = 981 * 1.4; // 
-var gravity = new THREE.Vector3( 0, -GRAVITY, 0 ).multiplyScalar(MASS);
-
-var TIMESTEP = 18 / 1000;
-var TIMESTEP_SQ = TIMESTEP * TIMESTEP;
-
-var RIPDIST = 6;
-
-var tmpForce = new THREE.Vector3();
-
-var lastTime;
-
-// Variables to save on allocation
-var diff3D = new THREE.Vector3();
-var currentDist = 0;
-
-// Satisfies distance constraints between two vertices
-function satisifyConstraints(p1, p2, distance) {
-	diff3D.subVectors(p2.position, p1.position);
-	currentDist = diff3D.length();
-	if (currentDist === 0) { return true; } // prevents division by 0
-	diff3D.multiplyScalar(1 - distance / currentDist);
-	diff3D.multiplyScalar(0.5);
-	p1.position.add(diff3D);
-	p2.position.sub(diff3D);
-	return currentDist < distance*RIPDIST;
-}
-
-// Simulates a cloth to a certain timestep
+obstacleCollisions = true;
 function simulate(time, cloth) {
 	if (!lastTime) {
 		lastTime = time;
 		return;
 	}
 	
-	var obstacleCollisions = true;
-
 	var i, il, particles, particle, pt, constraints, constrain;
 	var xy, p, obstacle, obstacleInv;
 	var ballSize = 220;

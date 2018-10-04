@@ -9,6 +9,13 @@ function preload() {
         images[i].src = preload.arguments[i];
     }
 }
+
+function attach(child, scene, parent) {
+    child.applyMatrix( new THREE.Matrix4().getInverse( parent.matrixWorld ) );
+    scene.remove( child );
+    parent.add( child );
+}
+
 preload( "images/border.png",
          "images/Seal.png",
          "images/Paper.jpg",
@@ -88,15 +95,30 @@ saintLoader.add = function(saint) {
     this.saints.push(saint);
 };
 
-saintLoader.createObject = function(jsonFile,objName){
-    var loader = new THREE.JSONLoader();
+saintLoader.createObject = function(fileName,objName){
+    var extension = fileName.split('.').pop();
     var container = new THREE.Mesh();
-    loader.load( jsonFile , function (geometry, materials) {
-        container.geometry = geometry;
-        if(materials!==undefined) { container.material = materials[0]; }
-        container.name = objName;
-        saintLoader.checkAllLoaded();
-    });
+    if (extension == 'gltf' || extension == 'glb')
+    {
+        var loader = new THREE.GLTFLoader();
+        loader.load( fileName , function (gltf) {
+            console.log(gltf)
+            container.geometry = gltf.scene.children[0].children[0].geometry
+            container.name = objName;
+            console.log(container)
+            saintLoader.checkAllLoaded();
+        });
+    }
+    else
+    {
+        var loader = new THREE.JSONLoader();
+        loader.load( fileName , function (geometry, materials) {
+            container.geometry = geometry;
+            if(materials!==undefined) { container.material = materials[0]; }
+            container.name = objName;
+            saintLoader.checkAllLoaded();
+        });
+    }
     return container;
 };
 
@@ -609,12 +631,9 @@ Sebastian.init = function(){
     this.objects[1].material = transparentMat;
     this.objects[2].material = transparentMat;    
     
-    THREE.SceneUtils.attach(this.objects[1], scene,
-                            this.objects[4].skeleton.bones[1]); // Torso
-    THREE.SceneUtils.attach(this.objects[2], scene,
-                            this.objects[4].skeleton.bones[2]); // Hips
-    THREE.SceneUtils.attach(this.objects[3], scene,
-                        this.objects[4].skeleton.bones[2]); // Butt
+    attach(this.objects[1], scene, this.objects[4].skeleton.bones[1]); // Torso
+    attach(this.objects[2], scene, this.objects[4].skeleton.bones[2]); // Hips
+    attach(this.objects[3], scene, this.objects[4].skeleton.bones[2]); // Butt
 };
 
 Sebastian.makePhysics = function(){
@@ -789,7 +808,7 @@ Sebastian.animate = function(){
 
             if (hitArray.length>0){
                 this.vars.arrowLive = false;
-                THREE.SceneUtils.attach(this.vars.arrow, scene, hitArray[0].object);
+                attach(this.vars.arrow, scene, hitArray[0].object);
                 origin = hitArray[0].point.clone();
                 direction.multiplyScalar(2);
                 if(hitArray[0].object.uuid==this.objects[1].uuid){
@@ -854,7 +873,7 @@ Bartholemew.init = function(){
                                               0.1, 10000 );
     this.camera.position.y = 200;
     this.camera.position.z = 1200;
-    this.camera.position.x = 10;
+    this.camera.position.x = 0;
     this.camera.rotation.x = -0.08;
     this.camera.rotation.y = 0.01;
     this.camera.name = 'MainCam';
@@ -877,7 +896,7 @@ Bartholemew.init = function(){
     scene.add(this.lights[1]);
 
     // OBJECTS
-    this.objects[0].position.set(75, -105, 0);
+    this.objects[0].position.set(75, -115, 0);
     this.objects[0].rotation.set(-0.02, 0.18, -0.08);
     scene.add(this.objects[0]);
     this.objects[0].add(this.objects[1]);
@@ -955,20 +974,31 @@ Bartholemew.animate = function() {
 };
 
 Bartholemew.getGrabPoint = function(mousePos) {
-    var mouseDiff = mousePos.clone();
-    mouseDiff.sub(this.vars.mouseStart);
-    mouseDiff.multiplyScalar(2);
-    var vector = new THREE.Vector3();
-    vector.set(mousePos.x+mouseDiff.x, mousePos.y+mouseDiff.y,0.5 );
-    vector.unproject(camera);
-    var dir = vector.sub( camera.position ).normalize();
-    var distance = - camera.position.z / dir.z;
-    this.vars.grabPoint = camera.position.clone();
-    this.vars.grabPoint.add( dir.multiplyScalar( distance ) );
+    var diff = new THREE.Vector3();
+    var mouseD = mousePos.clone();
+    mouseD.sub(this.vars.mouseStart);
+    diff.set(mouseD.x, mouseD.y,  .5)
+    diff.multiplyScalar(500);
+    diff.add(this.vars.grabPoint)
     if(this.vars.grabbed){
         this.vars.cloth.grabFromFace(this.vars.selectedFace,
-                                        this.vars.grabPoint);
+                                     diff);
     }
+    // var mouseDiff = mousePos.clone();
+    // mouseDiff.sub(this.vars.mouseStart);
+    // mouseDiff.multiplyScalar(2);
+    // var vector = new THREE.Vector3();
+    // vector.set(mousePos.x+mouseDiff.x, mousePos.y+mouseDiff.y,0.5 );
+    // vector.unproject(camera);
+    // var dir = vector.sub( camera.position ).normalize();
+    // var distance = - camera.position.z / dir.z;
+    // this.vars.grabPoint = camera.position.clone();
+    // this.vars.grabPoint.add( dir.multiplyScalar( distance ) );
+    
+    // if(this.vars.grabbed){
+    //     this.vars.cloth.grabFromFace(this.vars.selectedFace,
+    //                                  this.vars.grabPoint);
+    // }
 };
 
 Bartholemew.onPress = function(mousePos,intersects){
@@ -976,6 +1006,11 @@ Bartholemew.onPress = function(mousePos,intersects){
         this.vars.INTERSECTED = intersects[0].object;
         this.vars.selectedFace = intersects[0].face;
         this.vars.intersectPoint = intersects[0].point;
+        mat = new THREE.Matrix4()
+        mat.getInverse(this.objects[0].matrixWorld)
+        this.vars.mouseStart = mousePos.clone();
+        this.vars.grabPoint = this.vars.intersectPoint.clone()
+        this.vars.grabPoint.applyMatrix4(mat)
         this.vars.grabbed = true;
     } 
     else {

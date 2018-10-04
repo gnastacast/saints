@@ -1,31 +1,47 @@
-
-body {
+html,body {
 	font-family: georgia, serif;
     /*font-family: 'IM Fell English SC', serif;*/
 	/*background-color: #e4e4e4;*/
+    overscroll-behavior-y: contain;
     background-color:white;
 	margin: 0px;
 	overflow: hidden;
 }
 
 div.card {
-    margin-top:7vh;
-	height : 80vh;
-	width : 49.442vh;
+    touch-action: none;
+    margin-top:5vh;
+    margin-top : calc(var(--true-height, 0px) * 0.05);
+    height : 90vh;
+	height : calc(var(--true-height, 0px) * 0.9);
+    width: 55.623vh;
+	width : calc(var(--true-height, 0px) * 0.55623);
 	z-index: 0;
 	background:#e4e4e4 url(../images/Paper.jpg);
-	border: 3vh solid;
+    background-size: 5%;
+    border: 3vh solid;
+	border: calc(var(--true-height, 0px) * 0.03) solid;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
 	border-color:white;
     border-radius: 5vh;
-	box-shadow: 0px 0px 5vh #CCC;/*#aaa*/
+    border-radius: calc(var(--true-height, 0px) * 0.05);
+    box-shadow: 0px 0px 5vh #CCC;/*#aaa*/
+    box-shadow: 0px 0px calc(var(--true-height, 0px) * 0.05) #CCC;/*#aaa*/
 	/* golden ratio 1.61803398875 */
-	margin-left: auto;
+	position: absolute;
+    margin-left: auto;
     margin-right: auto;
+    left: 0;
+    right: 0;
 }
 
 .card p {
-    font-size: 2vh;
+    font-size: 1.8vh;
+    font-size: calc(var(--true-height, 0px) * 0.018);
     line-height: 5.3vh;
+    line-height: calc(var(--true-height, 0px) * 0.053);
     color: #5b5b5b;
     margin: 0% 10%;
     text-align: center;
@@ -34,6 +50,7 @@ div.card {
 .card .caption {
     color: #7b7b7b;
     font-size: 1.5vh;
+    font-size: calc(var(--true-height, 0px) * 0.015);
 }
 
 .card p i {
@@ -43,7 +60,9 @@ div.card {
 
 .card img {
     padding: 5% 11.5vh;
+    padding: 5% calc(var(--true-height, 0px) * 0.115);
     width: 26.442vh;
+    width: calc(var(--true-height, 0px) * 0.26442);
 }
 
 .card a {
@@ -52,7 +71,8 @@ div.card {
 
 .card h1 {
     font-size:3vh;
-    line-height:0vh;
+    font-size: calc(var(--true-height, 0px) * 0.03);
+    line-height:0px;
     color:black;
     margin-top: 15%;
     margin-bottom: 10%;
@@ -78,18 +98,30 @@ div.card {
 
 #saintCanvas{
     border-radius: 2vh;
+    border-radius: calc(var(--true-height, 0px) * .02);
+    height:100%;
+    width:100%;
 }
 
 #saint{
-    margin-top: -80.5vh;
+  height:100%;
+  width:100%;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 
 .gold-border{
-    margin:2vh;
-    height:72.5vh;
+    position:relative;
+    height:96%;
+    /* 2 * golden ratio */
+    margin:3.23%;
     border-style: solid;
     border-width: 2vh;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
     -moz-border-image: url(../images/border.png) 19 round;
     -webkit-border-image: url(../images/border.png) 19 round;
     -o-border-image: url(../images/border.png) 19 round;
@@ -97,7 +129,10 @@ div.card {
 }
 
 .text-shifter{
-    margin-top:-78vh;
+  height:100%;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 #load-screen{
