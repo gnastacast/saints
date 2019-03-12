@@ -4,7 +4,7 @@
         <title>three.js canvas - geometry - platter</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <link rel="stylesheet" type="text/css" href="js/swiper-4.4.1/css/swiper.min.css">
+        <link rel="stylesheet" type="text/css" href="js/swiper/css/swiper.min.css">
         <!--<link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC' rel='stylesheet' type='text/css'>-->
         <link rel="stylesheet" type="text/css" href="css/normalize.css">
         <link rel="stylesheet" type="text/css" href="css/cards.css">
@@ -113,13 +113,14 @@
             <div id="seal"><p>LOADING</p></div>
         </div>
         <script src="js/three.min.js"></script>
-        <script src="js/swiper-4.4.1/js/swiper.min.js"></script>
+        <script src="js/swiper/js/swiper.min.js"></script>
         <script>
             // scene size
-            HEIGHT = window.innerHeight * 0.84;
-            WIDTH = window.innerHeight * 0.49623;
+            maxHeight = Math.min(window.innerHeight, window.innerWidth * 1.61803398875)
+            HEIGHT = maxHeight * 0.84;
+            WIDTH = maxHeight * 0.49623;
             document.documentElement.style.setProperty("--true-height",
-                                                       window.innerHeight + "px")
+                                                       maxHeight + "px")
 
             var camera, scene, renderer, saintContainer;
             var mouse = new THREE.Vector2();
@@ -154,13 +155,7 @@
                 scene = new THREE.Scene();
             
                 window.addEventListener(   'resize',     onWindowResize,      { passive: false } );
-                document.addEventListener( 'mousedown',  onDocumentMouseDown, { passive: false } );
-                document.addEventListener( 'mouseup',    onDocumentMouseUp,   { passive: false } );
-                document.addEventListener( 'touchstart', onDocumentMouseDown, { passive: false } );
-                document.addEventListener( 'touchend',   onDocumentMouseUp,   { passive: false } );
-                document.addEventListener( 'mousemove',  onDocumentMouseMove, { passive: false } );
-                document.addEventListener( 'touchmove',  onDocumentMouseMove, { passive: false } );
-                document.addEventListener( 'touchchange',  onDocumentMouseMove, function(e){ console.log(e); });
+                window.addEventListener("orientationchange", onWindowResize, { passive: false } );
             }
 
             function getMousePos(eventPos){
@@ -179,10 +174,14 @@
                     raycaster.setFromCamera( mouse, camera );
                     var intersects = raycaster.intersectObjects( scene.children );
                     if ( intersects.length > 0){
-                        mySwiperSubA.allowTouchMove = false;
-                        mySwiperSubB.allowTouchMove = false;
-                        mySwiperSubC.allowTouchMove = false;
-                        mySwiper.allowTouchMove = false;
+                        mySwiperSubA.allowSlideNext = false;
+                        mySwiperSubB.allowSlideNext = false;
+                        mySwiperSubC.allowSlideNext = false;
+                        mySwiper.allowSlideNext = false;
+                        mySwiperSubA.allowSlidePrev = false;
+                        mySwiperSubB.allowSlidePrev = false;
+                        mySwiperSubC.allowSlidePrev = false;
+                        mySwiper.allowSlidePrev = false;
                         if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
                             saintLoader.saints[currentSlideNum-1].onPress(mouse,intersects);
                         }
@@ -191,16 +190,21 @@
             }
 
             function onDocumentMouseUp( event ) {
-                mySwiperSubA.allowTouchMove = true;
-                mySwiperSubB.allowTouchMove = true;
-                mySwiperSubC.allowTouchMove = true;
-                mySwiper.allowTouchMove = true;
+                mySwiperSubA.allowSlideNext = true;
+                mySwiperSubB.allowSlideNext = true;
+                mySwiperSubC.allowSlideNext = true;
+                mySwiper.allowSlideNext = true;
+                mySwiperSubA.allowSlidePrev = true;
+                mySwiperSubB.allowSlidePrev = true;
+                mySwiperSubC.allowSlidePrev = true;
+                mySwiper.allowSlidePrev = true;
                 if (currentSlideNum !== 0 && saintLoader.saints.length == 3) {
                     saintLoader.saints[currentSlideNum-1].onRelease();
                 }
             }
 
             function onDocumentMouseMove(event) {
+            	console.log("MOVE")
                 // event.preventDefault();
                 if(event.touches == undefined) { getMousePos( event ); }
                 else { getMousePos(event.touches[0]); }
@@ -210,16 +214,18 @@
             }
 
             function onWindowResize() {
-                HEIGHT = window.innerHeight * 0.84;
-                WIDTH = window.innerHeight * 0.49623;
+                var maxHeight = Math.min(window.innerHeight, window.innerWidth * 1.61803398875)
+                HEIGHT = maxHeight * 0.84;
+                WIDTH = maxHeight * 0.49623;
                 document.documentElement.style.setProperty("--true-height",
-                                                           window.innerHeight + "px")
+                                                           maxHeight + "px")
                 windowHalfX = WIDTH / 2;
                 windowHalfY = HEIGHT / 2;
                 camera.aspect = (WIDTH) / (HEIGHT);
                 camera.updateProjectionMatrix();
                 renderer.setSize(WIDTH , HEIGHT);
-                mySwiper.onResize();
+                window.getComputedStyle();
+                mySwiper.update();
             }
 
             function render() {
@@ -255,7 +261,6 @@
                                     watchSlidesProgress:true,
                                     loop: false,
                                     runCallbacksOnInit:true,
-                                    //touchEventsTarget:'swiper-wrapper-subA',
                                     touchEventsTarget:'swiper-wrapper-main',
                                     nested:true,
                                     longSwipesRatio:0.3,
@@ -263,7 +268,18 @@
                                     effect:'flip',
                                     flipEffect: { slideShadows : false,
                                                   limitRotation: true  },
-                                    resistanceRatio:0 };
+                                    resistanceRatio:0,
+                                    touchMoveStopPropagation: false,
+					                on: {
+										touchStart: function (event) {
+											onDocumentMouseDown(event)					},
+										touchEnd: function (event) {
+											onDocumentMouseUp(event)					},
+										touchMove: function (event) {
+											onDocumentMouseMove(event)					},
+									},
+									touchAngle:90,
+                                    };
 
             var mySwiperSubA = new Swiper('.subA', swiperSubParams);
             //swiperSubParams.touchEventsTarget = 'swiper-wrapper-subB';
@@ -282,7 +298,8 @@
                 longSwipesRatio:0.3,
                 touchRatio:1,
                 effect:'slide',
-                spaceBetween: 20
+                spaceBetween: 20,
+                simulateTouch: true
             });
 
             mySwiper.on('transitionStart', function(swiper, event){

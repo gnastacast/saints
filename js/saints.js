@@ -102,10 +102,8 @@ saintLoader.createObject = function(fileName,objName){
     {
         var loader = new THREE.GLTFLoader();
         loader.load( fileName , function (gltf) {
-            console.log(gltf)
             container.geometry = gltf.scene.children[0].children[0].geometry
             container.name = objName;
-            console.log(container)
             saintLoader.checkAllLoaded();
         });
     }

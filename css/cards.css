@@ -10,8 +10,6 @@ html,body {
 
 div.card {
     touch-action: none;
-    margin-top:5vh;
-    margin-top : calc(var(--true-height, 0px) * 0.05);
     height : 90vh;
 	height : calc(var(--true-height, 0px) * 0.9);
     width: 55.623vh;
@@ -31,6 +29,9 @@ div.card {
     box-shadow: 0px 0px calc(var(--true-height, 0px) * 0.05) #CCC;/*#aaa*/
 	/* golden ratio 1.61803398875 */
 	position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
     margin-left: auto;
     margin-right: auto;
     left: 0;
@@ -38,8 +39,8 @@ div.card {
 }
 
 .card p {
-    font-size: 1.8vh;
-    font-size: calc(var(--true-height, 0px) * 0.018);
+    font-size: 2.1vh;
+    font-size: calc(var(--true-height, 0px) * 0.021);
     line-height: 5.3vh;
     line-height: calc(var(--true-height, 0px) * 0.053);
     color: #5b5b5b;
